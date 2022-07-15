@@ -1,4 +1,4 @@
-﻿namespace ICM.Functions.Infrastructure.Models
+﻿namespace ICM.Functions.Application.Models
 {
     public class FileModel
     {

@@ -1,16 +1,15 @@
-﻿
-using ICM.Functions.Infrastructure;
-using ICM.Functions.Infrastructure.Models;
+﻿using ICM.Functions.Application.Infrastructure;
+using ICM.Functions.Application.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace ICM.Functions.Durable
 {
-    [StorageAccount("BlobConnectionString")]
     public class PGPEncrypter
     {
         private readonly IEncrypter _encrypter;
@@ -30,6 +29,7 @@ namespace ICM.Functions.Durable
             return fileModel;
         }
 
+        [StorageAccount("BlobConnectionString")]
         [FunctionName("PGPEncrypter_Encrypt")]
         public async Task<FileModel> EncryptAsync(
             [ActivityTrigger] FileModel inputFileModel, IBinder binder, ILogger logger)
@@ -39,7 +39,14 @@ namespace ICM.Functions.Durable
 
             logger.LogInformation($"Encrypt and save file = '{originFile}' to '{destinationFile}'.");
 
-            return await _encrypter.EncryptAsync(binder, inputFileModel, logger);
+            var inputBlobAttribute = new BlobAttribute(originFile, FileAccess.Read);
+            var outputBlobAttribute = new BlobAttribute(destinationFile, FileAccess.Write);
+
+            using var inputBlob = await binder.BindAsync<Stream>(inputBlobAttribute);
+            using var outputBlob = await binder.BindAsync<Stream>(outputBlobAttribute);
+
+            await _encrypter.EncryptAsync(inputBlob, outputBlob, logger);
+            return inputFileModel;
         }
 
 
@@ -47,7 +54,7 @@ namespace ICM.Functions.Durable
         public  async Task<HttpResponseMessage> HttpStart(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestMessage req,
             [DurableClient] IDurableOrchestrationClient starter, ILogger logger)
-        {
+        {   
             var data = await req.Content.ReadAsAsync<FileModel>();
             // Function input comes from the request content.
             string instanceId = await starter.StartNewAsync("PGPEncrypter", data);

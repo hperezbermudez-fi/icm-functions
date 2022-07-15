@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\" />
+    <ProjectReference Include="..\ICM.Functions.Application\ICM.Functions.Application.csproj" />
   </ItemGroup>
 
 </Project>

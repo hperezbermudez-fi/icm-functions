@@ -3,11 +3,11 @@ using Microsoft.Extensions.DependencyInjection;
 using ICM.Functions.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.ApplicationInsights;
-using Microsoft.Extensions.Logging.Abstractions;
+using ICM.Functions.Durable;
 
-[assembly: FunctionsStartup(typeof(Namespace.Startup))]
+[assembly: FunctionsStartup(typeof(Startup))]
 
-namespace Namespace
+namespace ICM.Functions.Durable
 {
     public class Startup : FunctionsStartup
     {
@@ -19,9 +19,7 @@ namespace Namespace
                 builder.AddFilter<ApplicationInsightsLoggerProvider>(string.Empty, LogLevel.Trace);
             });
 
-            var context = builder.GetContext();
-
-            builder.Services.AddInfrastructureServices(context.Configuration, NullLoggerFactory.Instance);
+            builder.Services.AddInfrastructureServices();
         }
     }
 }
